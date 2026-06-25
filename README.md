@@ -127,7 +127,7 @@ com.portfolio.worldcup
 
 ```bash
 # 1. Clonar o repositório
-git clone https://github.com/SEU_USUARIO/worldcup-api.git
+git clone https://github.com/BrunoBrasilJr/worldcup-api.git
 cd worldcup-api
 
 # 2. Rodar a aplicação (Windows)
