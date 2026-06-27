@@ -16,6 +16,10 @@ public class Team {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ID do time na API-Football (para casar dados na ingestao e evitar duplicar).
+    @Column(unique = true)
+    private Long externalId;
+
     @Column(nullable = false)
     private String name;          // ex: Brasil
 
@@ -23,7 +27,9 @@ public class Team {
     private String code;          // ex: BRA (sigla de 3 letras)
 
     @Column(name = "team_group")
-    private String group;         // ex: "A" (grupo na Copa) -> coluna renomeada p/ evitar palavra reservada SQL
+    private String group;         // ex: "A" (grupo na Copa)
 
     private String flagUrl;       // url da bandeira (opcional)
+
+    private String logoUrl;       // url do logo do time (vem da API)
 }
