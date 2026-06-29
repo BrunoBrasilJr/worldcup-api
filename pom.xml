@@ -6,7 +6,7 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.7</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
 	<groupId>com.portfolio</groupId>
 	<artifactId>worldcup-api</artifactId>
@@ -43,7 +43,7 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
-		<!-- DevTools: reinicia o servidor automaticamente quando voce salva um arquivo -->
+		<!-- DevTools: reinicia o servidor automaticamente quando voce salva -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -51,6 +51,14 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!-- PostgreSQL: driver do banco de producao -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- H2: mantido para testes/dev rapido (nao e mais o banco principal) -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
