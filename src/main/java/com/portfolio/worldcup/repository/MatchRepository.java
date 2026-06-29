@@ -16,6 +16,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     List<Match> findByMatchDateTimeBetween(LocalDateTime start, LocalDateTime end);
 
-    // Busca um jogo pelo ID externo (da API-Football). Chave da ingestao idempotente.
-    Optional<Match> findByExternalId(Long externalId);
+    // Busca um jogo pela identidade externa composta (provider + externalId).
+    Optional<Match> findByProviderAndExternalId(String provider, Long externalId);
 }

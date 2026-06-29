@@ -17,13 +17,15 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class IngestionService {
 
+    // Identifica esta fonte de dados. Se um dia houver outro provedor, ele tera seu proprio valor.
+    private static final String PROVIDER = "API_FOOTBALL";
+
     private final ApiFootballClient apiFootballClient;
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
 
     @Transactional
     public int ingestLiveFixtures() {
-        // O client ja devolve o DTO pronto (sem ObjectMapper manual).
         ApiFixturesResponse parsed = apiFootballClient.getLiveFixtures();
 
         if (parsed == null || parsed.response == null || parsed.response.isEmpty()) {
@@ -55,7 +57,10 @@ public class IngestionService {
 
         Long externalId = item.fixture.id;
 
-        Match match = matchRepository.findByExternalId(externalId).orElseGet(Match::new);
+        Match match = matchRepository
+                .findByProviderAndExternalId(PROVIDER, externalId)
+                .orElseGet(Match::new);
+        match.setProvider(PROVIDER);
         match.setExternalId(externalId);
         match.setHomeTeam(home);
         match.setAwayTeam(away);
@@ -98,13 +103,16 @@ public class IngestionService {
         if (info == null || info.id == null) {
             return null;
         }
-        return teamRepository.findByExternalId(info.id).orElseGet(() -> {
-            Team t = new Team();
-            t.setExternalId(info.id);
-            t.setName(info.name);
-            t.setLogoUrl(info.logo);
-            return teamRepository.save(t);
-        });
+        return teamRepository
+                .findByProviderAndExternalId(PROVIDER, info.id)
+                .orElseGet(() -> {
+                    Team t = new Team();
+                    t.setProvider(PROVIDER);
+                    t.setExternalId(info.id);
+                    t.setName(info.name);
+                    t.setLogoUrl(info.logo);
+                    return teamRepository.save(t);
+                });
     }
 
     private MatchStatus mapStatus(String shortStatus) {

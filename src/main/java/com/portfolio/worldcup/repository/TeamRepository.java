@@ -7,6 +7,6 @@ import java.util.Optional;
 
 public interface TeamRepository extends JpaRepository<Team, Long> {
 
-    // Busca um time pelo ID externo (da API-Football). Usado na ingestao p/ evitar duplicar.
-    Optional<Team> findByExternalId(Long externalId);
+    // Busca um time pela identidade externa composta (provider + externalId).
+    Optional<Team> findByProviderAndExternalId(String provider, Long externalId);
 }

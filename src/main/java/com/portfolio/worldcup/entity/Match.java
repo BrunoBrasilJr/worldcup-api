@@ -18,8 +18,11 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ID do jogo na API-Football (chave para ingestao idempotente).
-    @Column(unique = true)
+    // Fonte de dados (ex: API_FOOTBALL). Parte da identidade externa.
+    @Column(nullable = false, length = 50)
+    private String provider = "API_FOOTBALL";
+
+    // ID do jogo no provider (chave para ingestao idempotente).
     private Long externalId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,7 +43,6 @@ public class Match {
     private String stadium;
     private String city;
 
-    // Competicao e fase (ex: "FIFA World Cup", "Group Stage").
     private String league;
     private String round;
 
