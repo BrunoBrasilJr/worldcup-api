@@ -43,13 +43,24 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
-		<!-- Actuator: endpoints de observabilidade (health, info, metrics) -->
+		<!-- Actuator: endpoints de observabilidade -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-		<!-- DevTools: reinicia o servidor automaticamente quando voce salva -->
+		<!-- Flyway: starter (Spring Boot 4 exige o starter, nao basta flyway-core) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<!-- Suporte do Flyway especifico para PostgreSQL -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
+		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
@@ -57,14 +68,14 @@
 			<optional>true</optional>
 		</dependency>
 
-		<!-- PostgreSQL: driver do banco de producao -->
+		<!-- PostgreSQL -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- H2: usado no perfil dev -->
+		<!-- H2 (perfil dev) -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
