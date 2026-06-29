@@ -43,6 +43,12 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- Actuator: endpoints de observabilidade (health, info, metrics) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!-- DevTools: reinicia o servidor automaticamente quando voce salva -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -58,7 +64,7 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- H2: mantido para testes/dev rapido (nao e mais o banco principal) -->
+		<!-- H2: usado no perfil dev -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
