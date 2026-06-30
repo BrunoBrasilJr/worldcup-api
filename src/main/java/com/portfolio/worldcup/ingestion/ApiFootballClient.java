@@ -1,5 +1,6 @@
 package com.portfolio.worldcup.ingestion;
 
+import com.portfolio.worldcup.ingestion.dto.ApiEventsResponse;
 import com.portfolio.worldcup.ingestion.dto.ApiFixturesResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,10 +37,6 @@ public class ApiFootballClient {
                 .body(ApiFixturesResponse.class);
     }
 
-    /**
-     * DEBUG: retorna a resposta CRUA (String) da chamada de competicao,
-     * para inspecionar errors/results. CUSTA 1 requisicao.
-     */
     public String getCompetitionFixturesRaw() {
         return apiFootballRestClient.get()
                 .uri(uriBuilder -> uriBuilder
@@ -66,5 +63,19 @@ public class ApiFootballClient {
                 .uri("/fixtures?live=all")
                 .retrieve()
                 .body(ApiFixturesResponse.class);
+    }
+
+    /**
+     * Busca os eventos (gols, cartoes, subst, VAR) de UM jogo, pelo fixture id da API.
+     * CUSTA 1 requisicao da quota POR JOGO.
+     */
+    public ApiEventsResponse getEvents(Long fixtureExternalId) {
+        return apiFootballRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fixtures/events")
+                        .queryParam("fixture", fixtureExternalId)
+                        .build())
+                .retrieve()
+                .body(ApiEventsResponse.class);
     }
 }

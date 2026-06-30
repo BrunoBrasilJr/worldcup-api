@@ -4,10 +4,12 @@ import com.portfolio.worldcup.entity.Player;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PlayerRepository extends JpaRepository<Player, Long> {
 
-    // Busca todos os jogadores de um time, pelo id do time.
-    // O Spring le o nome do metodo e gera o SQL: WHERE team_id = ?
     List<Player> findByTeamId(Long teamId);
+
+    // Busca um jogador pelo nome (usado na ingestao de eventos, que so traz nome).
+    Optional<Player> findFirstByName(String name);
 }

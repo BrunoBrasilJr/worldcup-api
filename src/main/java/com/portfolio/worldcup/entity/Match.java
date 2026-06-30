@@ -18,11 +18,9 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Fonte de dados (ex: API_FOOTBALL). Parte da identidade externa.
     @Column(nullable = false, length = 50)
     private String provider = "API_FOOTBALL";
 
-    // ID do jogo no provider (chave para ingestao idempotente).
     private Long externalId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,4 +50,8 @@ public class Match {
 
     @Column(nullable = false)
     private Integer currentMinute = 0;
+
+    // Marca se os eventos deste jogo ja foram ingeridos (evita re-buscar e gastar quota).
+    @Column(nullable = false)
+    private Boolean eventsIngested = false;
 }
