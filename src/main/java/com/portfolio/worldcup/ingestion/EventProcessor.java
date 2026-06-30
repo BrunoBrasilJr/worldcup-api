@@ -25,17 +25,12 @@ public class EventProcessor {
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
 
-    /**
-     * Persiste os eventos de UM jogo em sua propria transacao.
-     * Limpa os eventos antigos do jogo antes de re-inserir (idempotente para LIVE).
-     */
     @Transactional
     public int processEvents(Match match, ApiEventsResponse response) {
         if (response == null || response.response == null) {
             return 0;
         }
 
-        // Limpa eventos antigos deste jogo (evita duplicar ao re-ingerir).
         matchEventRepository.deleteByMatchId(match.getId());
 
         List<MatchEvent> toSave = new ArrayList<>();
@@ -43,9 +38,9 @@ public class EventProcessor {
         for (ApiEventItem item : response.response) {
             int minute = (item.time != null && item.time.elapsed != null) ? item.time.elapsed : 0;
             Team team = resolveTeam(item.team);
-            Player player = resolvePlayer(item.player);
+            // Passa o time do evento ao resolver o jogador (corrige teamName null).
+            Player player = resolvePlayer(item.player, team);
 
-            // Evento principal (gol, cartao, subst, var...)
             EventType mainType = mapType(item.type, item.detail);
             if (mainType != null) {
                 MatchEvent ev = new MatchEvent();
@@ -58,9 +53,8 @@ public class EventProcessor {
                 toSave.add(ev);
             }
 
-            // Se for gol com assistencia, gera tambem um evento ASSIST.
             if ("Goal".equalsIgnoreCase(item.type) && item.assist != null && item.assist.name != null) {
-                Player assistant = resolvePlayer(item.assist);
+                Player assistant = resolvePlayer(item.assist, team);
                 MatchEvent assistEv = new MatchEvent();
                 assistEv.setMatch(match);
                 assistEv.setTeam(team);
@@ -74,16 +68,12 @@ public class EventProcessor {
 
         matchEventRepository.saveAll(toSave);
 
-        // Marca o jogo como tendo eventos ingeridos.
         match.setEventsIngested(true);
         matchRepository.save(match);
 
         return toSave.size();
     }
 
-    /**
-     * Mapeia (type + detail) da API-Football para o nosso EventType.
-     */
     private EventType mapType(String type, String detail) {
         if (type == null) {
             return null;
@@ -96,7 +86,7 @@ public class EventProcessor {
             case "card" -> d.contains("red") ? EventType.RED_CARD : EventType.YELLOW_CARD;
             case "subst" -> EventType.SUBSTITUTION;
             case "var" -> EventType.VAR;
-            default -> null; // tipo desconhecido: ignora
+            default -> null;
         };
     }
 
@@ -124,15 +114,26 @@ public class EventProcessor {
                 });
     }
 
-    private Player resolvePlayer(ApiEventItem.PlayerRef ref) {
+    /**
+     * Resolve o jogador pelo nome. Se nao existe, cria ja com o time.
+     * Se existe mas esta sem time, preenche o time (corrige registros antigos).
+     */
+    private Player resolvePlayer(ApiEventItem.PlayerRef ref, Team team) {
         if (ref == null || ref.name == null) {
             return null;
         }
-        return playerRepository.findFirstByName(ref.name)
+        Player player = playerRepository.findFirstByName(ref.name)
                 .orElseGet(() -> {
                     Player p = new Player();
                     p.setName(ref.name);
-                    return playerRepository.save(p);
+                    return p;
                 });
+
+        // Vincula o time se ainda nao tiver.
+        if (player.getTeam() == null && team != null) {
+            player.setTeam(team);
+        }
+
+        return playerRepository.save(player);
     }
 }
