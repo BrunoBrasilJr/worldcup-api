@@ -6,10 +6,12 @@ import com.portfolio.worldcup.ingestion.dto.ApiFixtureItem;
 import com.portfolio.worldcup.ingestion.dto.ApiFixturesResponse;
 import com.portfolio.worldcup.repository.MatchRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IngestionService {
 
     private final ApiFootballClient apiFootballClient;
@@ -17,46 +19,38 @@ public class IngestionService {
     private final EventProcessor eventProcessor;
     private final MatchRepository matchRepository;
 
-    /** Competicao filtrada (liga+season). Requer acesso a season. */
     public int ingestCompetition() {
         return ingest(apiFootballClient.getCompetitionFixtures(), "competicao completa");
     }
 
-    /** Ao vivo filtrado por liga. */
     public int ingestLive() {
         return ingest(apiFootballClient.getLiveCompetitionFixtures(), "ao vivo da competicao");
     }
 
-    /** Ao vivo do mundo (live=all) - funciona no plano free. */
     public int ingestLiveAll() {
         return ingest(apiFootballClient.getLiveFixtures(), "ao vivo (mundo)");
     }
 
-    /**
-     * Ingere os EVENTOS de UM jogo (pelo id interno do nosso banco).
-     * CUSTA 1 requisicao da quota.
-     * Retorna a quantidade de eventos persistidos, ou -1 se o jogo nao existe.
-     */
     public int ingestEventsForMatch(Long matchId) {
         Match match = matchRepository.findById(matchId).orElse(null);
         if (match == null) {
-            System.out.println(">>> Jogo " + matchId + " nao encontrado.");
+            log.warn("Jogo {} nao encontrado para ingestao de eventos.", matchId);
             return -1;
         }
         if (match.getExternalId() == null) {
-            System.out.println(">>> Jogo " + matchId + " nao tem externalId (nao veio da API).");
+            log.warn("Jogo {} nao tem externalId (nao veio da API). Ingestao de eventos abortada.", matchId);
             return -1;
         }
 
         ApiEventsResponse events = apiFootballClient.getEvents(match.getExternalId());
         int saved = eventProcessor.processEvents(match, events);
-        System.out.println(">>> Eventos ingeridos para o jogo " + matchId + ": " + saved);
+        log.info("Eventos ingeridos para o jogo {}: {} eventos.", matchId, saved);
         return saved;
     }
 
     private int ingest(ApiFixturesResponse parsed, String origem) {
         if (parsed == null || parsed.response == null || parsed.response.isEmpty()) {
-            System.out.println(">>> Nenhum jogo encontrado (" + origem + ").");
+            log.warn("Nenhum jogo encontrado ({}).", origem);
             return 0;
         }
 
@@ -68,12 +62,11 @@ public class IngestionService {
                 count++;
             } catch (Exception e) {
                 errors++;
-                System.out.println(">>> Erro ao processar jogo: " + e.getMessage());
+                log.error("Erro ao processar jogo: {}", e.getMessage(), e);
             }
         }
 
-        System.out.println(">>> Ingestao (" + origem + ") concluida: "
-                + count + " processados, " + errors + " com erro.");
+        log.info("Ingestao ({}) concluida: {} processados, {} com erro.", origem, count, errors);
         return count;
     }
 }

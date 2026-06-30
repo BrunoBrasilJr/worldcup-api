@@ -7,6 +7,7 @@ import com.portfolio.worldcup.ingestion.dto.ApiFixtureItem;
 import com.portfolio.worldcup.repository.MatchRepository;
 import com.portfolio.worldcup.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.time.OffsetDateTime;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class FixtureProcessor {
 
     private static final String PROVIDER = "API_FOOTBALL";
@@ -22,11 +24,6 @@ public class FixtureProcessor {
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
 
-    /**
-     * Processa UMA partida em sua PROPRIA transacao.
-     * Propagation.REQUIRES_NEW garante uma transacao independente por partida:
-     * se esta falhar, faz rollback so dela, sem afetar as outras.
-     */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void process(ApiFixtureItem item) {
         if (item.fixture == null || item.teams == null) {
@@ -66,7 +63,8 @@ public class FixtureProcessor {
                 match.setMatchDateTime(
                     OffsetDateTime.parse(item.fixture.date).toLocalDateTime()
                 );
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                log.debug("Data invalida no fixture {}: {}", externalId, item.fixture.date);
             }
         }
 
@@ -78,6 +76,7 @@ public class FixtureProcessor {
         }
 
         matchRepository.save(match);
+        log.debug("Jogo processado: externalId={} status={}", externalId, match.getStatus());
     }
 
     private Team resolveTeam(ApiFixtureItem.TeamInfo info) {

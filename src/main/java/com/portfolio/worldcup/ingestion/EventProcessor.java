@@ -8,6 +8,7 @@ import com.portfolio.worldcup.repository.MatchRepository;
 import com.portfolio.worldcup.repository.PlayerRepository;
 import com.portfolio.worldcup.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class EventProcessor {
 
     private static final String PROVIDER = "API_FOOTBALL";
@@ -28,6 +30,7 @@ public class EventProcessor {
     @Transactional
     public int processEvents(Match match, ApiEventsResponse response) {
         if (response == null || response.response == null) {
+            log.warn("Resposta de eventos vazia para o jogo {}.", match.getId());
             return 0;
         }
 
@@ -38,7 +41,6 @@ public class EventProcessor {
         for (ApiEventItem item : response.response) {
             int minute = (item.time != null && item.time.elapsed != null) ? item.time.elapsed : 0;
             Team team = resolveTeam(item.team);
-            // Passa o time do evento ao resolver o jogador (corrige teamName null).
             Player player = resolvePlayer(item.player, team);
 
             EventType mainType = mapType(item.type, item.detail);
@@ -71,6 +73,7 @@ public class EventProcessor {
         match.setEventsIngested(true);
         matchRepository.save(match);
 
+        log.info("Eventos persistidos para o jogo {}: {} eventos.", match.getId(), toSave.size());
         return toSave.size();
     }
 
@@ -114,10 +117,6 @@ public class EventProcessor {
                 });
     }
 
-    /**
-     * Resolve o jogador pelo nome. Se nao existe, cria ja com o time.
-     * Se existe mas esta sem time, preenche o time (corrige registros antigos).
-     */
     private Player resolvePlayer(ApiEventItem.PlayerRef ref, Team team) {
         if (ref == null || ref.name == null) {
             return null;
@@ -129,7 +128,6 @@ public class EventProcessor {
                     return p;
                 });
 
-        // Vincula o time se ainda nao tiver.
         if (player.getTeam() == null && team != null) {
             player.setTeam(team);
         }
