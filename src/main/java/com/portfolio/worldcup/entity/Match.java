@@ -54,4 +54,8 @@ public class Match {
     // Marca se os eventos deste jogo ja foram ingeridos (evita re-buscar e gastar quota).
     @Column(nullable = false)
     private Boolean eventsIngested = false;
+
+    // Quando os eventos deste jogo foram sincronizados pela ultima vez.
+    // NULL = nunca sincronizado (maior prioridade na rotacao do scheduler).
+    private LocalDateTime lastEventsSync;
 }

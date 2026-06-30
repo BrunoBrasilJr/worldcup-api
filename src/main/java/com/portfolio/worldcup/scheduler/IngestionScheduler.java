@@ -17,18 +17,45 @@ public class IngestionScheduler {
     @Value("${ingestion.enabled:true}")
     private boolean enabled;
 
-    @Scheduled(fixedRate = 1_800_000, initialDelay = 60_000)
-    public void scheduledIngestion() {
+    @Value("${ingestion.events.max-matches-per-cycle:3}")
+    private int maxMatchesPerCycle;
+
+    /**
+     * SCHEDULER DE JOGOS: atualiza placar/status (live=all).
+     * Barato: 1 requisicao traz todos os jogos ao vivo.
+     */
+    @Scheduled(fixedRateString = "${ingestion.fixtures.interval-ms:1800000}", initialDelay = 60_000)
+    public void scheduledFixtures() {
         if (!enabled) {
-            log.debug("Scheduler de ingestao desabilitado (ingestion.enabled=false).");
+            log.debug("[Scheduler/Jogos] desabilitado (ingestion.enabled=false).");
             return;
         }
-        log.info("[Scheduler] Iniciando ingestao automatica (live=all)...");
+        log.info("[Scheduler/Jogos] Atualizando jogos ao vivo...");
         try {
             int processed = ingestionService.ingestLiveAll();
-            log.info("[Scheduler] Ingestao automatica concluida: {} jogos.", processed);
+            log.info("[Scheduler/Jogos] Concluido: {} jogos.", processed);
         } catch (Exception e) {
-            log.error("[Scheduler] Erro na ingestao automatica: {}", e.getMessage(), e);
+            log.error("[Scheduler/Jogos] Erro: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * SCHEDULER DE EVENTOS: sincroniza eventos dos jogos elegiveis,
+     * com rotacao justa e teto de 'maxMatchesPerCycle' jogos por ciclo.
+     * Cada jogo custa 1 requisicao (cuidado com quota).
+     */
+    @Scheduled(fixedRateString = "${ingestion.events.interval-ms:600000}", initialDelay = 120_000)
+    public void scheduledEvents() {
+        if (!enabled) {
+            log.debug("[Scheduler/Eventos] desabilitado (ingestion.enabled=false).");
+            return;
+        }
+        log.info("[Scheduler/Eventos] Sincronizando eventos (ate {} jogos)...", maxMatchesPerCycle);
+        try {
+            int synced = ingestionService.ingestEventsForActiveMatches(maxMatchesPerCycle);
+            log.info("[Scheduler/Eventos] Concluido: {} jogos sincronizados.", synced);
+        } catch (Exception e) {
+            log.error("[Scheduler/Eventos] Erro: {}", e.getMessage(), e);
         }
     }
 }

@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +32,9 @@ public class EventProcessor {
     public int processEvents(Match match, ApiEventsResponse response) {
         if (response == null || response.response == null) {
             log.warn("Resposta de eventos vazia para o jogo {}.", match.getId());
+            // Mesmo vazia, marca a sincronizacao para a rotacao avancar.
+            match.setLastEventsSync(LocalDateTime.now());
+            matchRepository.save(match);
             return 0;
         }
 
@@ -71,6 +75,8 @@ public class EventProcessor {
         matchEventRepository.saveAll(toSave);
 
         match.setEventsIngested(true);
+        // Marca QUANDO sincronizou (alimenta a rotacao justa do scheduler).
+        match.setLastEventsSync(LocalDateTime.now());
         matchRepository.save(match);
 
         log.info("Eventos persistidos para o jogo {}: {} eventos.", match.getId(), toSave.size());

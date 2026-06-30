@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -36,11 +37,21 @@ public class IngestionTestController {
         return Map.of("status", "ok", "matchesProcessed", processed);
     }
 
-    /** Ingere os eventos de UM jogo (id interno do banco). Custa 1 requisicao. */
     @GetMapping("/ingest-events/{matchId}")
     public Map<String, Object> ingestEvents(@PathVariable Long matchId) {
         int saved = ingestionService.ingestEventsForMatch(matchId);
         return Map.of("status", saved >= 0 ? "ok" : "not_found", "eventsPersisted", saved);
+    }
+
+    /**
+     * Dispara a sincronizacao de eventos dos jogos elegiveis (rotacao justa),
+     * com teto de 'max' jogos. Util para forcar a sincronizacao sob demanda.
+     * CUSTA ate 'max' requisicoes.
+     */
+    @GetMapping("/sync-active-events")
+    public Map<String, Object> syncActiveEvents(@RequestParam(defaultValue = "3") int max) {
+        int synced = ingestionService.ingestEventsForActiveMatches(max);
+        return Map.of("status", "ok", "matchesSynced", synced, "limit", max);
     }
 
     @GetMapping("/debug-competition")
