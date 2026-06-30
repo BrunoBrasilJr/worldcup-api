@@ -17,19 +17,41 @@ import java.time.OffsetDateTime;
 @RequiredArgsConstructor
 public class IngestionService {
 
-    // Identifica esta fonte de dados. Se um dia houver outro provedor, ele tera seu proprio valor.
     private static final String PROVIDER = "API_FOOTBALL";
 
     private final ApiFootballClient apiFootballClient;
     private final TeamRepository teamRepository;
     private final MatchRepository matchRepository;
 
+    /**
+     * Ingere TODA a competicao configurada (liga + temporada).
+     * Requer plano com acesso a season (ex: pago, ou season 2022-2024 no free).
+     */
     @Transactional
-    public int ingestLiveFixtures() {
-        ApiFixturesResponse parsed = apiFootballClient.getLiveFixtures();
+    public int ingestCompetition() {
+        return ingest(apiFootballClient.getCompetitionFixtures(), "competicao completa");
+    }
 
+    /**
+     * Ingere apenas os jogos AO VIVO da competicao (filtrado por liga).
+     */
+    @Transactional
+    public int ingestLive() {
+        return ingest(apiFootballClient.getLiveCompetitionFixtures(), "ao vivo da competicao");
+    }
+
+    /**
+     * Ingere TODOS os jogos ao vivo do mundo (live=all).
+     * Funciona no plano free e captura jogos da Copa quando estao ao vivo.
+     */
+    @Transactional
+    public int ingestLiveAll() {
+        return ingest(apiFootballClient.getLiveFixtures(), "ao vivo (mundo)");
+    }
+
+    private int ingest(ApiFixturesResponse parsed, String origem) {
         if (parsed == null || parsed.response == null || parsed.response.isEmpty()) {
-            System.out.println(">>> Nenhum jogo ao vivo no momento.");
+            System.out.println(">>> Nenhum jogo encontrado (" + origem + ").");
             return 0;
         }
 
@@ -43,7 +65,7 @@ public class IngestionService {
             }
         }
 
-        System.out.println(">>> Ingestao concluida: " + count + " jogos processados.");
+        System.out.println(">>> Ingestao (" + origem + ") concluida: " + count + " jogos processados.");
         return count;
     }
 

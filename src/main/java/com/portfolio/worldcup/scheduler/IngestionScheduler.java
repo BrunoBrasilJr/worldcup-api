@@ -12,25 +12,21 @@ public class IngestionScheduler {
 
     private final IngestionService ingestionService;
 
-    // Liga/desliga o scheduler pelo application.properties (true por padrao).
     @Value("${ingestion.enabled:true}")
     private boolean enabled;
 
     /**
-     * Roda a ingestao automaticamente a cada 30 minutos (1.800.000 ms).
-     * initialDelay = 60.000 ms -> espera 1 min apos subir antes da 1a execucao
-     * (evita disparar logo no boot enquanto o app ainda esta inicializando).
-     *
-     * Cada execucao consome 1 requisicao da quota diaria (max ~48/dia se rodar 24h).
+     * Ingestao automatica a cada 30 min. Usa live=all (funciona no plano free
+     * e captura jogos da Copa quando estao ao vivo).
      */
     @Scheduled(fixedRate = 1_800_000, initialDelay = 60_000)
     public void scheduledIngestion() {
         if (!enabled) {
             return;
         }
-        System.out.println(">>> [Scheduler] Iniciando ingestao automatica...");
+        System.out.println(">>> [Scheduler] Iniciando ingestao automatica (live=all)...");
         try {
-            int processed = ingestionService.ingestLiveFixtures();
+            int processed = ingestionService.ingestLiveAll();
             System.out.println(">>> [Scheduler] Ingestao automatica: " + processed + " jogos.");
         } catch (Exception e) {
             System.out.println(">>> [Scheduler] Erro na ingestao: " + e.getMessage());

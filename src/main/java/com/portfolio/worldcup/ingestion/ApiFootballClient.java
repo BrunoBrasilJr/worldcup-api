@@ -2,6 +2,7 @@ package com.portfolio.worldcup.ingestion;
 
 import com.portfolio.worldcup.ingestion.dto.ApiFixturesResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -11,9 +12,12 @@ public class ApiFootballClient {
 
     private final RestClient apiFootballRestClient;
 
-    /**
-     * /status - valida conexao e quota. NAO conta na quota diaria.
-     */
+    @Value("${apifootball.league}")
+    private int league;
+
+    @Value("${apifootball.season}")
+    private int season;
+
     public String getStatus() {
         return apiFootballRestClient.get()
                 .uri("/status")
@@ -21,11 +25,42 @@ public class ApiFootballClient {
                 .body(String.class);
     }
 
+    public ApiFixturesResponse getCompetitionFixtures() {
+        return apiFootballRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fixtures")
+                        .queryParam("league", league)
+                        .queryParam("season", season)
+                        .build())
+                .retrieve()
+                .body(ApiFixturesResponse.class);
+    }
+
     /**
-     * /fixtures?live=all - todos os jogos ao vivo agora, JA convertidos no nosso DTO.
-     * O RestClient cuida da desserializacao do JSON sozinho.
-     * CUSTA 1 requisicao da quota diaria.
+     * DEBUG: retorna a resposta CRUA (String) da chamada de competicao,
+     * para inspecionar errors/results. CUSTA 1 requisicao.
      */
+    public String getCompetitionFixturesRaw() {
+        return apiFootballRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fixtures")
+                        .queryParam("league", league)
+                        .queryParam("season", season)
+                        .build())
+                .retrieve()
+                .body(String.class);
+    }
+
+    public ApiFixturesResponse getLiveCompetitionFixtures() {
+        return apiFootballRestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/fixtures")
+                        .queryParam("live", league)
+                        .build())
+                .retrieve()
+                .body(ApiFixturesResponse.class);
+    }
+
     public ApiFixturesResponse getLiveFixtures() {
         return apiFootballRestClient.get()
                 .uri("/fixtures?live=all")
